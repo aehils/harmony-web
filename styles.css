@@ -77,8 +77,8 @@ em {
    so their edges line up as you scroll. */
 @media (min-width: 1025px) {
   .wrap {
-    max-width: none;                        /* the frame is the enclosure: fill it */
-    padding: 0 var(--frame-radius);         /* content edges = the logo's line, where the curve ends */
+    max-width: 1840px;
+    padding: 0 clamp(48px, 5vw, 96px);      /* a real margin inside the frame, not a second frame */
   }
 }
 
