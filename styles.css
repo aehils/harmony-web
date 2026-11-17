@@ -9,14 +9,29 @@
   --hand: "Caveat", cursive;
   --gutter: clamp(20px, 5vw, 72px);
   --ease: cubic-bezier(.2, .8, .2, 1);
+
+  /* The frame: a mat one step lighter than the ink, in the same hue, so the
+     content reads as a panel set into it, even on the dark sections. */
+  --frame: #33203E;
+  --frame-top: clamp(56px, 5.4vw, 76px);   /* the rail with logo + envelope */
+  --frame-side: clamp(6px, 1vw, 14px);
+  --frame-bottom: var(--frame-side);
+  --frame-radius: clamp(12px, 1.3vw, 20px);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--frame-top);       /* anchors land inside the window */
+  background: var(--frame);                   /* overscroll shows the mat, not a gap */
+  scrollbar-color: rgba(252, 234, 240, .22) var(--frame);
+}
 
 body {
   margin: 0;
+  /* Content starts and ends inside the window, never under the frame. */
+  padding: var(--frame-top) var(--frame-side) var(--frame-bottom);
   background: var(--ink);
   color: var(--blush);
   font-family: var(--sans);
@@ -58,6 +73,14 @@ em {
   margin: 0 auto;
   padding: 0 var(--gutter);
 }
+/* Desktop: a wider stage with lighter side margins, shared by every section
+   so their edges line up as you scroll. */
+@media (min-width: 1025px) {
+  .wrap {
+    max-width: 1840px;
+    padding: 0 clamp(48px, 5vw, 96px);      /* a real margin inside the frame, not a second frame */
+  }
+}
 
 /* ── Type ─────────────────────────────────────────── */
 
@@ -80,57 +103,154 @@ em {
 .display { font-size: clamp(2.3rem, 6.2vw, 5.4rem); }
 .title   { font-size: clamp(2rem, 4.8vw, 4rem); }
 
-/* ── Nav ──────────────────────────────────────────── */
+/* ── Frame ────────────────────────────────────────── */
 
-.nav {
-  position: absolute;
+/* The mat: a full-screen surface of colour and grain, with the window cut out
+   by a mask. Four bands cover the edges; four corner pieces, each solid
+   outside a quarter circle, give the window its rounded shape. */
+.frame__window {
+  --r: var(--frame-radius);
+  --corner: transparent calc(var(--r) - .5px), #000 var(--r);
+  /* Corner pieces reach from the screen corner to the end of the curve, so
+     they overlap the bands instead of meeting them edge to edge. Pieces that
+     only touch leave faint seams at fractional pixel sizes. */
+  --cw: calc(var(--frame-side) + var(--r));
+  --ct: calc(var(--frame-top) + var(--r));
+  --cb: calc(var(--frame-bottom) + var(--r));
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background-color: var(--frame);
+  /* Grain: grey fractal noise blended with overlay, so it nudges the colour
+     a touch lighter and darker in equal measure. The average stays on
+     var(--frame); the opacity on the rect sets how much tooth it has. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+  background-size: 220px;
+  background-blend-mode: overlay;
+  -webkit-mask-image:
+    linear-gradient(#000 0 0), linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0), linear-gradient(#000 0 0),
+    radial-gradient(circle at 100% 100%, var(--corner)),
+    radial-gradient(circle at 0 100%, var(--corner)),
+    radial-gradient(circle at 100% 0, var(--corner)),
+    radial-gradient(circle at 0 0, var(--corner));
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size:
+    100% var(--frame-top), 100% var(--frame-bottom),
+    var(--frame-side) 100%, var(--frame-side) 100%,
+    var(--cw) var(--ct), var(--cw) var(--ct), var(--cw) var(--cb), var(--cw) var(--cb);
+  -webkit-mask-position:
+    top, bottom, left, right,
+    left top, right top, left bottom, right bottom;
+  mask-image:
+    linear-gradient(#000 0 0), linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0), linear-gradient(#000 0 0),
+    radial-gradient(circle at 100% 100%, var(--corner)),
+    radial-gradient(circle at 0 100%, var(--corner)),
+    radial-gradient(circle at 100% 0, var(--corner)),
+    radial-gradient(circle at 0 0, var(--corner));
+  mask-repeat: no-repeat;
+  mask-size:
+    100% var(--frame-top), 100% var(--frame-bottom),
+    var(--frame-side) 100%, var(--frame-side) 100%,
+    var(--cw) var(--ct), var(--cw) var(--ct), var(--cw) var(--cb), var(--cw) var(--cb);
+  mask-position:
+    top, bottom, left, right,
+    left top, right top, left bottom, right bottom;
+}
+
+/* The window's edge: a hairline and a soft inner shade, so the content reads
+   as sitting just beneath the mat. A sibling of the mat, not a child: the
+   mat's mask would otherwise hide it everywhere except the corner pieces,
+   leaving square smudges where the curve should be. */
+.frame__edge {
+  position: fixed;
+  inset: var(--frame-top) var(--frame-side) var(--frame-bottom);
+  z-index: 20;
+  border-radius: var(--frame-radius);
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(252, 234, 240, .08),
+    inset 0 1px 6px rgba(20, 10, 25, .18);
+}
+
+/* The top rail. Its side padding clears the window's rounded corner, so the
+   logo and envelope sit over the straight part of the edge. */
+.frame {
+  position: fixed;
   inset: 0 0 auto 0;
-  z-index: 10;
+  z-index: 21;
+  height: var(--frame-top);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(18px, 3vw, 32px) var(--gutter);
+  padding: 0 calc(var(--frame-side) + var(--frame-radius));
 }
-.nav__logo img { width: clamp(160px, 19vw, 240px); }
-.nav__cta {
-  display: inline-flex;
+/* The logo's small "CORPORATION" is plum in the artwork, too dim on the mat.
+   The <img> is clipped to drop that word; a second copy (::after) shows only
+   the word, knocked out to a soft blush. The word sits in the bottom 20% and
+   left 54% of the artwork, clear of the "y" descender. */
+.frame__logo {
+  position: relative;
+  display: block;
+  width: clamp(124px, 11.5vw, 176px);
+}
+.frame__logo img {
+  width: 100%;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 54% 100%, 54% 80%, 0 80%);
+}
+.frame__logo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("assets/logo.webp") 0 0 / 100% 100% no-repeat;
+  clip-path: inset(80% 46% 0 0);
+  filter: brightness(0) invert(1);
+  opacity: .62;
+}
+
+/* Get in touch: a quiet utility label, then the envelope. Indented past the
+   window's curve by more than the logo, so it sits well inside the rail. */
+.frame__mail {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: .78rem;
-  font-weight: 600;
+  gap: 12px;
+  padding: 8px;
+  margin-right: calc(clamp(8px, 1.4vw, 22px) - 8px);
+  border-radius: 8px;
+  color: var(--blush);
+  text-decoration: none;
+  transition: color .3s;
+}
+.frame__label {
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: .7rem;
   letter-spacing: .14em;
   text-transform: uppercase;
-  text-decoration: none;
-  padding: .8em 1.4em;
-  border: 1px solid rgba(252, 234, 240, .3);
-  border-radius: 99px;
-  transition: background .3s, color .3s, border-color .3s, transform .4s var(--ease);
+  color: rgba(252, 234, 240, .62);
+  transition: color .3s;
 }
-.nav__cta:hover { background: var(--pink); border-color: var(--pink); color: #fff; }
-.nav__icon { display: none; }
-
-/* Tablet: just the envelope, no frame */
+.frame__mail svg { transition: transform .4s var(--ease); }
+.frame__mail:hover, .frame__mail:hover .frame__label { color: var(--pink); }
+.frame__mail:hover svg { transform: translateY(-2px) rotate(-6deg); }
+/* Tablet and phone: no extra indent. The envelope's visible edge lands where
+   the window's curve ends, mirroring the logo on the left. (-10px cancels
+   the link's 8px hit-area padding plus the glyph's own 2px inner margin.) */
 @media (max-width: 1024px) {
-  .nav__label { display: none; }
-  .nav__icon { display: block; }
-  .nav__cta { padding: 8px; border: 0; border-radius: 8px; color: var(--blush); }
-  .nav__cta:hover { background: none; color: var(--pink); transform: translateY(-2px) rotate(-6deg); }
+  .frame__mail { margin-right: -10px; }
 }
-/* Phone: the logo has the top to itself */
-@media (max-width: 600px) {
-  .nav { justify-content: center; padding-top: 26px; }
-  .nav__cta { display: none; }
-  .nav__logo img { width: 164px; }
-}
+.frame a:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 /* ── Hero ─────────────────────────────────────────── */
 
 .hero { height: 240vh; position: relative; }
+/* The stage pins to the window, not the screen, and fills it exactly. */
 .hero__stage {
   position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100svh;
+  top: var(--frame-top);
+  height: calc(100vh - var(--frame-top) - var(--frame-bottom));
+  height: calc(100svh - var(--frame-top) - var(--frame-bottom));
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -257,6 +377,7 @@ em {
   padding-right: 34px;
 }
 .move__body p {
+  text-wrap: pretty;                /* no lone word on the last line */
   margin: 0 0 1.2rem;
   font-size: clamp(1.02rem, 1.4vw, 1.2rem);
 }
@@ -288,6 +409,28 @@ em {
   .move__head:hover { color: var(--pink); padding-left: 14px; }
 }
 
+/* Desktop only: a wider stage with lighter side margins. The title keeps the
+   full width at full size; beneath it the intro and the pillars sit side by
+   side instead of stacked, which is where the height comes back.
+   Tablet and phone keep the stacked layout. */
+@media (min-width: 1025px) {
+  .movements { padding: clamp(56px, 5vw, 88px) 0; }
+  .movements__grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    column-gap: clamp(40px, 4vw, 72px);
+    align-items: start;
+  }
+  .movements__head { grid-column: 1 / -1; }
+  .movements .title { max-width: 16em; }
+  .movements__intro { margin: clamp(28px, 2.4vw, 44px) 0 0; max-width: none; }
+  .moves { margin-top: clamp(28px, 2.4vw, 44px); }
+  .move:first-child { border-top: 0; }                   /* the list starts level with the intro's first line */
+  .move__head { padding: clamp(20px, 1.8vw, 28px) 0; }
+  .move:first-child .move__head { padding-top: 0; }
+  .move__name { font-size: clamp(1.5rem, 2.1vw, 2.05rem); }
+}
+
 /* ── Team ─────────────────────────────────────────── */
 
 .team {
@@ -297,16 +440,31 @@ em {
 .team__grid {
   display: grid;
   grid-template-columns: .85fr 1.15fr;
-  gap: clamp(36px, 5vw, 80px);
+  gap: clamp(56px, 8vw, 132px);
   align-items: center;
 }
-.team__copy > p:not(.eyebrow):not(.voice) {
-  max-width: 38em;
+/* The title closes against the right edge of the column, where the
+   justified paragraphs end. */
+.team__title { text-align: right; }
+
+/* Left-aligned, so word spacing never stretches. `pretty` makes the browser
+   weigh the whole paragraph when breaking lines, which evens out the right
+   edge and avoids a lone word on the last line. */
+.team__copy > p:not(.voice) {
   margin: 1.6rem 0 0;
   color: rgba(252, 234, 240, .8);
+  text-wrap: pretty;
 }
+.team__title + p { margin-top: clamp(28px, 2.6vw, 40px); }
 
-.team .eyebrow { color: var(--amber); } /* plum is too dim on ink */
+/* Wide desktops: the stage fills the frame, but lines of prose stay
+   readable (about 75 characters). The copy block caps its width and keeps
+   to the right, so the title's right edge still meets the paragraphs'.
+   The photo caps too, holding the left. */
+@media (min-width: 1025px) {
+  .team__copy { max-width: 44rem; justify-self: end; }
+  .polaroid { max-width: 640px; justify-self: start; }
+}
 
 /* The closing thought, in the pink voice, on a line of its own. */
 .team__voice {
@@ -351,10 +509,18 @@ em {
   background: rgba(255, 0, 98, .55);
   z-index: 2;
 }
+/* Side by side on tablet, the photo leans out into the left margin a little,
+   giving the copy more room. Margin, not transform: transform carries the
+   tilt. On desktop the wider stage already does this, and the photo lines
+   up with the section edges instead. */
+@media (min-width: 821px) and (max-width: 1024px) {
+  .polaroid { margin-left: calc(var(--gutter) * -.55); }
+}
 
 /* ── Finale ───────────────────────────────────────── */
 
 .finale {
+  position: relative;
   background: var(--blush);
   color: var(--ink);
   text-align: center;
@@ -383,24 +549,17 @@ em {
 }
 .button:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 0 0 12px rgba(255, 0, 98, .14); }
 
-/* Logo on the left, copyright on the right; stacked and centred on phones. */
-.footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 24px;
-  padding: clamp(28px, 3vw, 40px) var(--gutter);
-  border-top: 1px solid rgba(252, 234, 240, .1);
-  font-size: .72rem;
+/* The copyright: tucked in the bottom-right corner, legible but quiet. */
+.finale__legal {
+  position: absolute;
+  right: clamp(18px, 2.4vw, 36px);
+  bottom: clamp(16px, 2vw, 30px);
+  margin: 0;
+  font-size: .66rem;
   font-weight: 500;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: rgba(252, 234, 240, .55);
-}
-.footer__wordmark { width: clamp(120px, 11vw, 150px); }
-@media (max-width: 600px) {
-  .footer { flex-direction: column; justify-content: center; }
+  color: rgba(38, 22, 46, .45);
 }
 
 /* ── Scroll reveal ────────────────────────────────── */

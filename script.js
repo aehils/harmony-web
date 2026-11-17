@@ -103,7 +103,9 @@
 
   function onScroll() {
     if (reduced) return;
-    const travel = hero.offsetHeight - innerHeight;
+    // The stage is pinned inside the frame's window, so it's shorter than the
+    // screen; the pinned stretch is the hero's height minus the stage's.
+    const travel = hero.offsetHeight - canvas.parentElement.offsetHeight;
     const p = clamp(scrollY / travel);
     harmony = smooth(0.08, 0.72, p);
 
