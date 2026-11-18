@@ -1,0 +1,11 @@
+# Files in the repo that are not part of the website.
+# Wrangler uploads everything under assets.directory (".") except these.
+.assetsignore
+wrangler.jsonc
+README.md
+scripts/
+.claude/
+.git
+.git*
+.wrangler/
+node_modules/
