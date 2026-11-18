@@ -17,6 +17,13 @@
   --frame-side: clamp(6px, 1vw, 14px);
   --frame-bottom: var(--frame-side);
   --frame-radius: clamp(12px, 1.3vw, 20px);
+
+  /* The height of the window inside the frame: what one "screen" of content
+     is on this site. svh, so it doesn't jump as mobile toolbars come and go. */
+  --window-h: calc(100vh - var(--frame-top) - var(--frame-bottom));
+}
+@supports (height: 100svh) {
+  :root { --window-h: calc(100svh - var(--frame-top) - var(--frame-bottom)); }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -24,7 +31,11 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--frame-top);       /* anchors land inside the window */
-  background: var(--frame);                   /* overscroll shows the mat, not a gap */
+  /* A gentle pull: when a scroll comes to rest near the top of a section, it
+     settles there. Proximity, not mandatory, so it never fights the reader;
+     sections taller than the window still scroll freely inside. */
+  scroll-snap-type: y proximity;
+  background: var(--frame);                  /* overscroll shows the mat, not a gap */
   scrollbar-color: rgba(252, 234, 240, .22) var(--frame);
 }
 
@@ -41,6 +52,8 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
+
+main > section { scroll-snap-align: start; }
 
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; }
@@ -249,8 +262,7 @@ em {
 .hero__stage {
   position: sticky;
   top: var(--frame-top);
-  height: calc(100vh - var(--frame-top) - var(--frame-bottom));
-  height: calc(100svh - var(--frame-top) - var(--frame-bottom));
+  height: var(--window-h);
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -312,10 +324,54 @@ em {
 }
 /* ── Movements (focus areas) ──────────────────────── */
 
+/* At least one full window tall, so it sits snug in the frame with nothing
+   of the next section peeking in. Content stays anchored to the top: a pillar
+   opening grows into the space below rather than shifting the title. */
 .movements {
+  position: relative;
+  overflow: hidden;
+  overflow: clip;              /* clip the map without making a scroll container */
+  min-height: var(--window-h);
   background: var(--blush);
   color: var(--ink);
   padding: clamp(80px, 12vw, 170px) 0;
+}
+.movements > .wrap { position: relative; }   /* paint above the map */
+
+/* Africa, faint, tucked into the top-right corner behind the content.
+   Pinned to the top, so it stays put when a pillar opens and the section
+   grows. The mask keeps the north solid and dissolves the continent as it
+   reaches down and in towards the text, so the lines never sit hard behind
+   a word. Angled just past straight down (180deg), so it also eases off on
+   the side facing the title. */
+.movements__map {
+  --fade: linear-gradient(200deg, #000 30%, transparent 88%);
+  position: absolute;
+  top: clamp(16px, 3vw, 32px);
+  right: clamp(16px, 3vw, 32px);
+  width: min(54vw, 340px);
+  height: auto;
+  opacity: .12;
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: var(--fade);
+  mask-image: var(--fade);
+}
+/* Phone: a little smaller, and lowered off the window's top edge. */
+@media (max-width: 820px) {
+  .movements__map {
+    top: clamp(40px, 12vw, 64px);
+    width: min(46vw, 300px);
+  }
+}
+@media (min-width: 1025px) {
+  .movements__map {
+    top: clamp(24px, 2.4vw, 40px);
+    right: clamp(24px, 2.4vw, 40px);
+    width: auto;
+    height: calc(var(--window-h) * .64);
+    opacity: .18;
+  }
 }
 .movements .title { max-width: 14em; }
 .movements__intro {
