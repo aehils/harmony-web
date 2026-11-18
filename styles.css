@@ -572,21 +572,91 @@ em {
 
 /* ── Finale ───────────────────────────────────────── */
 
+/* The last screen: one full window, the content centred in it. Behind the
+   words, everything is translucent and decorative: washes of colour that
+   lean toward the pointer, the hero's braid of lines (drawn in script.js),
+   and rings rippling out from the emblem like a struck tuning fork. */
 .finale {
+  --mx: 50%;
+  --my: 40%;
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  overflow: clip;
+  min-height: var(--window-h);
+  display: grid;
+  align-items: center;
   background: var(--blush);
   color: var(--ink);
   text-align: center;
-  padding: clamp(100px, 14vw, 200px) 0;
+  padding: clamp(100px, 12vw, 180px) 0 clamp(140px, 16vw, 230px);
 }
-.finale__emblem {
+.finale__inner { position: relative; z-index: 2; }
+
+/* Washes: a pink glow that follows the pointer (set by script.js, default
+   centre), with plum and amber resting in opposite corners. */
+.finale__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .6;
+  background:
+    radial-gradient(38vmax 30vmax at var(--mx) var(--my), rgba(255, 0, 98, .13), transparent 70%),
+    radial-gradient(34vmax 28vmax at 8% 4%, rgba(180, 58, 128, .14), transparent 70%),
+    radial-gradient(36vmax 30vmax at 96% 100%, rgba(255, 128, 56, .16), transparent 70%);
+}
+
+.finale__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: .6;
+}
+
+/* The emblem and its resonance rings, centred on the same point. */
+.finale__mark {
+  position: relative;
   width: clamp(72px, 9vw, 120px);
   margin: 0 auto 2.4rem;
+}
+/* The emblem bobs on `breathe`; the rings share its 7s clock and both
+   start at load with no delay, so a pulse leaves exactly as the emblem
+   lands at its low point (0% / 100% of breathe), and the sky stays clear
+   while it rises. The hover hop lives on a wrapper: swapping the emblem's
+   own animation would restart breathe and knock the rings out of step. */
+.finale__hop { position: relative; display: block; }
+.finale__emblem {
+  width: 100%;
   animation: breathe 7s ease-in-out infinite;
 }
 @media (hover: hover) {
-  .finale__emblem:hover { animation: hop .9s var(--ease) 1; }
+  .finale__hop:hover { animation: hop .9s var(--ease) 1; }
 }
+.finale__ring {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 0, 98, .5);
+  background: radial-gradient(circle, transparent 58%, rgba(255, 0, 98, .06));
+  opacity: 0;
+  pointer-events: none;
+  animation: resonate 7s linear infinite;
+}
+/* A softer echo, a beat behind the first ring. */
+.finale__ring:nth-child(2) { animation-delay: .6s; border-color: rgba(255, 128, 56, .5); }
+/* Each pulse leaves at the emblem's low point (0%) and drifts out slowly
+   over most of the cycle, fading away just before the next landing. */
+@keyframes resonate {
+  0%   { transform: scale(.9); opacity: 0; animation-timing-function: ease-out; }
+  6%   { transform: scale(1.05); opacity: .6; animation-timing-function: cubic-bezier(.3, .5, .4, 1); }
+  85%  { transform: scale(3.8); opacity: 0; }
+  100% { transform: scale(3.8); opacity: 0; }
+}
+
 .button {
   display: inline-block;
   margin-top: clamp(32px, 4vw, 56px);
@@ -597,14 +667,23 @@ em {
   letter-spacing: .02em;
   text-decoration: none;
   border-radius: 99px;
-  box-shadow: 0 0 0 0 rgba(255, 0, 98, .5);
+  box-shadow:
+    0 0 0 0 rgba(255, 0, 98, .5),
+    0 18px 40px -16px rgba(255, 0, 98, .55);
   transition: transform .4s var(--ease), box-shadow .4s;
 }
-.button:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 0 0 12px rgba(255, 0, 98, .14); }
+.button:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow:
+    0 0 0 12px rgba(255, 0, 98, .14),
+    0 24px 50px -16px rgba(255, 0, 98, .6);
+}
+.button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
 
 /* The copyright: tucked in the bottom-right corner, legible but quiet. */
 .finale__legal {
   position: absolute;
+  z-index: 2;
   right: clamp(18px, 2.4vw, 36px);
   bottom: clamp(16px, 2vw, 30px);
   margin: 0;
@@ -639,6 +718,8 @@ em {
   .hero__copy--before, .hero__hint { display: none; }
   .hero__copy--after { opacity: 1; }
   .hero__emblem, .finale__emblem, .hero__hint svg { animation: none; }
+  .finale__ring { display: none; }
+  .finale__hop:hover { animation: none; }
   .js .reveal { opacity: 1; translate: none; transition: none; }
   .polaroid { transition: none; }
 }

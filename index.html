@@ -200,11 +200,22 @@
 
     <!-- FINALE -->
     <section class="finale" id="contact">
-      <div class="wrap">
-        <img class="finale__emblem reveal" src="assets/emblem.webp" alt="" width="316" height="330" loading="lazy">
+      <!-- Decoration only: two soft washes of colour, and the hero's six
+           voices returning as one calm braid, the chord the page ends on. -->
+      <div class="finale__glow" aria-hidden="true"></div>
+      <canvas class="finale__canvas" aria-hidden="true"></canvas>
+
+      <div class="wrap finale__inner">
+        <div class="finale__mark reveal">
+          <span class="finale__ring" aria-hidden="true"></span>
+          <span class="finale__ring" aria-hidden="true"></span>
+          <span class="finale__hop">
+            <img class="finale__emblem" src="assets/emblem.webp" alt="" width="316" height="330" loading="lazy">
+          </span>
+        </div>
         <h2 class="display reveal">Shall we get<br><em>things in tune?</em></h2>
         <!-- TODO: replace with the company's real contact address -->
-        <a class="button reveal" href="mailto:hello@example.com">Start a conversation</a>
+        <a class="button reveal" href="mailto:hello@example.com">Start a Conversation</a>
       </div>
       <p class="finale__legal">© <span id="year">2026</span> Harmony Corporation</p>
     </section>

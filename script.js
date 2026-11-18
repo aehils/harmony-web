@@ -262,6 +262,108 @@
     addEventListener('touchcancel', lift, { passive: true });
   }
 
+  /* ── Finale: the six voices return as one braid ──────────────────────────
+     The same tuned wave the hero resolves to, drawn translucent and running
+     beneath the button. Lines part around the pointer, as in the hero, and
+     the pink wash in the CSS drifts after it. Only runs while on screen. */
+
+  const finale = document.querySelector('.finale');
+  const fCanvas = document.querySelector('.finale__canvas');
+  const fButton = finale && finale.querySelector('.button');
+  if (finale && fCanvas && fButton) {
+    const fx = fCanvas.getContext('2d');
+    const fp = { x: 0, y: 0, tx: 0, ty: 0, power: 0, target: 0, fresh: true };
+    const glow = { x: 0.5, y: 0.4, tx: 0.5, ty: 0.4 };
+    let fw = 0, fh = 0, line = 0, fOn = false, fLast = 0;
+
+    const fResize = () => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      fw = fCanvas.clientWidth;
+      fh = fCanvas.clientHeight;
+      fCanvas.width = fw * dpr;
+      fCanvas.height = fh * dpr;
+      fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // The braid's centre line: a little below the button, in the space
+      // the section's bottom padding leaves for it.
+      // offsetTop ignores the reveal's translate, so this holds mid-animation.
+      const below = fButton.offsetParent.offsetTop + fButton.offsetTop + fButton.offsetHeight;
+      line = below + (finale.offsetHeight - below) * 0.42;
+    };
+
+    const fDraw = (ms) => {
+      const t = ms / 1000;
+      const dt = Math.min(0.05, (ms - fLast) / 1000 || 0.016);
+      fLast = ms;
+      const follow = 1 - Math.exp(-dt * 6);
+      fp.x += (fp.tx - fp.x) * follow;
+      fp.y += (fp.ty - fp.y) * follow;
+      fp.power += (fp.target - fp.power) * (1 - Math.exp(-dt * 4));
+      glow.x += (glow.tx - glow.x) * (1 - Math.exp(-dt * 2.5));
+      glow.y += (glow.ty - glow.y) * (1 - Math.exp(-dt * 2.5));
+      finale.style.setProperty('--mx', `${(glow.x * 100).toFixed(2)}%`);
+      finale.style.setProperty('--my', `${(glow.y * 100).toFixed(2)}%`);
+
+      const amp = Math.min(fh * 0.07, 64);
+      const push = PUSH * 0.8 * fp.power;
+      fx.clearRect(0, 0, fw, fh);
+      fx.lineWidth = 1.6;
+      fx.lineJoin = fx.lineCap = 'round';
+      fx.globalAlpha = 0.5;
+
+      const step = 4;
+      for (const v of VOICES) {
+        fx.beginPath();
+        for (let x = -step; x <= fw + step; x += step) {
+          const u = x / fw;
+          const envelope = 0.4 + 0.6 * Math.sin(Math.PI * clamp(u));
+          let y = line + Math.sin(u * 1.5 * Math.PI * 2 - t * 0.7 + v.phase) * amp * envelope;
+          if (push > 0.05) {
+            const dx = x - fp.x, dy = y - fp.y;
+            y += push * 1.65 * (dy / REACH) * Math.exp(-(dx * dx + dy * dy) / (2 * REACH * REACH));
+          }
+          x <= 0 ? fx.moveTo(x, y) : fx.lineTo(x, y);
+        }
+        fx.strokeStyle = v.color;
+        fx.stroke();
+      }
+    };
+
+    const fLoop = (ms) => {
+      if (!fOn) return;
+      fDraw(ms);
+      requestAnimationFrame(fLoop);
+    };
+
+    fResize();
+    addEventListener('resize', () => { fResize(); if (reduced) fDraw(0); });
+
+    if (reduced) {
+      fDraw(0);
+    } else {
+      finale.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        const r = finale.getBoundingClientRect();
+        fp.tx = e.clientX - r.left;
+        fp.ty = e.clientY - r.top;
+        if (fp.fresh) { fp.x = fp.tx; fp.y = fp.ty; fp.fresh = false; }
+        fp.target = 1;
+        glow.tx = fp.tx / r.width;
+        glow.ty = fp.ty / r.height;
+      });
+      finale.addEventListener('pointerleave', () => {
+        fp.target = 0;
+        fp.fresh = fp.power < 0.02;
+        glow.tx = 0.5;
+        glow.ty = 0.4;
+      });
+      new IntersectionObserver(([e]) => {
+        const was = fOn;
+        fOn = e.isIntersecting;
+        if (fOn && !was) { fResize(); requestAnimationFrame(fLoop); }
+      }).observe(finale);
+    }
+  }
+
   /* ── Polaroid: leans toward whoever is looking at it ─────────────────── */
 
   const polaroid = document.getElementById('polaroid');
