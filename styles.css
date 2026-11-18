@@ -31,11 +31,10 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--frame-top);       /* anchors land inside the window */
-  /* A gentle pull: when a scroll comes to rest near the top of a section, it
-     settles there. Proximity, not mandatory, so it never fights the reader;
-     sections taller than the window still scroll freely inside. */
-  scroll-snap-type: y proximity;
-  background: var(--frame);                  /* overscroll shows the mat, not a gap */
+  /* Sections settle gently into place when a scroll stops near their top:
+     see "Gentle settle" in script.js. Not CSS scroll-snap, which also pulls
+     to the bottom of tall sections and to the page end, and jumps on phones. */
+  background: var(--frame);                 /* overscroll shows the mat, not a gap */
   scrollbar-color: rgba(252, 234, 240, .22) var(--frame);
 }
 
@@ -52,8 +51,6 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-
-main > section { scroll-snap-align: start; }
 
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; }
