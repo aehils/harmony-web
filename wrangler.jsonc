@@ -1,0 +1,16 @@
+{
+  // Mirrors what `npx wrangler deploy` used to auto-generate for this repo
+  // (static site, assets served from the repo root), pinned so production
+  // builds no longer depend on Wrangler's autoconfig.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "harmony-web",
+  "compatibility_date": "2026-11-17",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "."
+  },
+  // Required by `wrangler preview`, which Workers Builds runs for pull requests.
+  "previews": {}
+}
